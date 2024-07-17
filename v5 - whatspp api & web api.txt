@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Baby Vaccine Scheduler</title>
+    <style>
+        body {
+            font-family: Muli, sans-serif;
+            background-color: #f9f9f9;
+            margin: 0;
+            padding: 20px;
+            color: #1C2F7F;
+        }
+        h2 {
+            text-align: center;
+            color: #1C2F7F;
+        }
+        form {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        label {
+            font-weight: bold;
+            margin-top: 10px;
+            display: block;
+        }
+        input[type="text"], input[type="date"] {
+            width: calc(100% - 22px);
+            padding: 10px;
+            margin: 5px 0 20px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #26BC9F;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+            display: block;
+            width: 100%;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: center;
+        }
+        th {
+            background-color: #1C2F7F;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        tr:hover {
+            background-color: #ddd;
+        }
+        .container {
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <h2>Baby Vaccine Scheduler</h2>
+    <div class="container">
+        <form id="vaccine-form">
+            <label for="babyName">Child's Name:</label>
+            <input type="text" id="babyName" name="babyName" required>
+
+            <label for="dob">Date of Birth:</label>
+            <input type="date" id="dob" name="dob" required>
+
+            <label for="parentContact">Mobile Number:</label>
+            <input type="text" id="parentContact" name="parentContact" required>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Vaccine</th>
+                        <th>Due Date</th>
+                    </tr>
+                </thead>
+                <tbody id="vaccine-schedule">
+                    <!-- Vaccine schedule will be populated here -->
+                </tbody>
+            </table>
+            <button type="button" onclick="handleDownload()">Download as PDF</button>
+        </form>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.14/jspdf.plugin.autotable.min.js"></script>
+    <script>
+        document.getElementById('dob').addEventListener('change', updateVaccineSchedule);
+
+        const vaccineSchedule = [
+            { vaccineAge: 'Birth', vaccine: 'BCG', ageInMonths: 0 },
+            { vaccineAge: 'Birth', vaccine: 'OPV', ageInMonths: 0 },
+            { vaccineAge: 'Birth', vaccine: 'Hepatitis B-1 (BD)', ageInMonths: 0 },
+            { vaccineAge: '6 Weeks', vaccine: 'DTwP/DTaP-1', ageInMonths: 1 },
+            { vaccineAge: '6 Weeks', vaccine: 'IPV-1', ageInMonths: 1 },
+            { vaccineAge: '6 Weeks', vaccine: 'Hib-1', ageInMonths: 1 },
+            { vaccineAge: '6 Weeks', vaccine: 'Hep B-2', ageInMonths: 1 },
+            { vaccineAge: '6 Weeks', vaccine: 'Rotavirus-1', ageInMonths: 1 },
+            { vaccineAge: '6 Weeks', vaccine: 'PCV-1', ageInMonths: 1 },
+            { vaccineAge: '10 Weeks', vaccine: 'DTwP/DTaP-2', ageInMonths: 2 },
+            { vaccineAge: '10 Weeks', vaccine: 'IPV-2', ageInMonths: 2 },
+            { vaccineAge: '10 Weeks', vaccine: 'Hib-2', ageInMonths: 2 },
+            { vaccineAge: '10 Weeks', vaccine: 'Hep B-3', ageInMonths: 2 },
+            { vaccineAge: '10 Weeks', vaccine: 'Rotavirus-2', ageInMonths: 2 },
+            { vaccineAge: '10 Weeks', vaccine: 'PCV-2', ageInMonths: 2 },
+            { vaccineAge: '14 Weeks', vaccine: 'DTwP/DTaP-3', ageInMonths: 3 },
+            { vaccineAge: '14 Weeks', vaccine: 'IPV-3', ageInMonths: 3 },
+            { vaccineAge: '14 Weeks', vaccine: 'Hib-3', ageInMonths: 3 },
+            { vaccineAge: '14 Weeks', vaccine: 'Hep B-4', ageInMonths: 3 },
+            { vaccineAge: '14 Weeks', vaccine: 'Rotavirus-3', ageInMonths: 3 },
+            { vaccineAge: '14 Weeks', vaccine: 'PCV-3', ageInMonths: 3 },
+            { vaccineAge: '6 Months', vaccine: 'Influenza (IIV)-1', ageInMonths: 6 },
+            { vaccineAge: '7 Months', vaccine: 'Influenza (IIV)-2', ageInMonths: 7 },
+            { vaccineAge: '6-9 Months', vaccine: 'Typhoid Conjugate Vaccine', ageInMonths: 8 },
+            { vaccineAge: '9 Month', vaccine: 'MMR-1', ageInMonths: 9 },
+            { vaccineAge: '9 Month', vaccine: 'Meningococcal Vaccine', ageInMonths: 9 },
+            { vaccineAge: '12 Month', vaccine: 'Hepatitis A', ageInMonths: 12 },
+            { vaccineAge: '12 Month', vaccine: 'Meningococcal Vaccine', ageInMonths: 12 },
+            { vaccineAge: '15 Month', vaccine: 'MMR-2', ageInMonths: 15 },
+            { vaccineAge: '15 Month', vaccine: 'Varicella-1', ageInMonths: 15 },
+            { vaccineAge: '15 Month', vaccine: 'PCV Booster', ageInMonths: 15 },
+            { vaccineAge: '16-18 Month', vaccine: 'DTwP/DTaP - B1', ageInMonths: 17 },
+            { vaccineAge: '16-18 Month', vaccine: 'Hib-B1', ageInMonths: 17 },
+            { vaccineAge: '16-18 Month', vaccine: 'IPV-B1', ageInMonths: 17 },
+            { vaccineAge: '18-19 Month', vaccine: 'Hep A-2', ageInMonths: 18 },
+            { vaccineAge: '18-19 Month', vaccine: 'Varicella-2', ageInMonths: 18 },
+            { vaccineAge: '4-6 Year', vaccine: 'DTwP/DTaP - B2', ageInMonths: 60 },
+            { vaccineAge: '4-6 Year', vaccine: 'IPV-B2', ageInMonths: 60 },
+            { vaccineAge: '4-6 Year', vaccine: 'MMR-3', ageInMonths: 60 },
+            { vaccineAge: '10-12 Year', vaccine: 'Tdap', ageInMonths: 120 },
+            { vaccineAge: '10-12 Year', vaccine: 'HPV', ageInMonths: 120 },
+            { vaccineAge: '10-12 Year', vaccine: 'PCV', ageInMonths: 120 }
+        ];
+
+       function updateVaccineSchedule() {
+    const dob = new Date(document.getElementById('dob').value);
+    const currentDate = new Date();
+    const scheduleBody = document.getElementById('vaccine-schedule');
+    scheduleBody.innerHTML = '';
+
+    vaccineSchedule.forEach(vaccine => {
+        const dueDate = new Date(dob);
+        dueDate.setMonth(dueDate.getMonth() + vaccine.ageInMonths);
+
+        // Calculate difference in months
+        const diffMonths = (dueDate.getFullYear() - currentDate.getFullYear()) * 12 + (dueDate.getMonth() - currentDate.getMonth());
+
+        const row = document.createElement('tr');
+        // Format due date as "Date : month name : Year"
+        const dueDateStr = `${dueDate.getDate()}-${dueDate.toLocaleString('default', { month: 'short' })}-${dueDate.getFullYear()}`;
+        row.innerHTML = `
+            <td>${vaccine.vaccine}</td>
+            <td>${dueDateStr}</td>
+        `;
+
+        // Apply color coding based on due date proximity
+        if (diffMonths < 0) {
+            row.style.backgroundColor = '#f0f0f0'; // Grey for overdue
+        } else if (diffMonths === 0) {
+            row.style.backgroundColor = '#ffcccc'; // Red for due within current month
+        } else if (diffMonths => 1) {
+            row.style.backgroundColor = '#ffff99'; // Yellow for due within next month
+        }
+
+        scheduleBody.appendChild(row);
+    });
+}
+
+    function handleDownload() {
+        // Collect form data
+        const babyName = document.getElementById('babyName').value;
+        const dob = document.getElementById('dob').value;
+        const parentContact = document.getElementById('parentContact').value;
+
+        // Collect vaccine schedule data
+        const vaccineSchedule = [];
+        let upcomingVaccines = [];
+        let upcomingDates = [];
+        document.querySelectorAll('#vaccine-schedule tr').forEach(row => {
+            const cells = row.getElementsByTagName('td');
+            if (cells.length > 0) {
+                const vaccine = cells[0].innerText;
+                const dueDate = cells[1].innerText;
+                vaccineSchedule.push({ vaccine, dueDate });
+
+                // Collect upcoming vaccines and dates within next month
+                const dueDateObj = new Date(dueDate.split('-').reverse().join('-'));
+                const currentDate = new Date();
+                const diffMonths = (dueDateObj.getFullYear() - currentDate.getFullYear()) * 12 + (dueDateObj.getMonth() - currentDate.getMonth());
+
+                if (diffMonths === 0) {
+                    upcomingVaccines.push(vaccine);
+                    upcomingDates.push(dueDate);
+                }
+            }
+        });
+
+        // Create a data object to send to the first API
+        const data1 = {
+            apiKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY1NTQ4NzljYTZhMzFlMGJkZWU5NWE2YyIsIm5hbWUiOiIxSGF0IiwiYXBwTmFtZSI6IkFpU2Vuc3kiLCJjbGllbnRJZCI6IjY1NTQ4NzljYTZhMzFlMGJkZWU5NWE2NyIsImFjdGl2ZVBsYW4iOiJCQVNJQ19NT05USExZIiwiaWF0IjoxNzAwMDM4NTU2fQ.JCRKFC7lATImy730hflXtaB4W8j7UBXzNPQc31wuK_Q",
+            campaignName: "Pediatrics_enquired",
+            destination: parentContact,
+            userName: babyName,
+            templateParams: [
+                babyName,    
+                "a", // baby name, again if needed
+                upcomingVaccines.join(', '), // upcoming vaccine names within 1 month
+                upcomingDates.join(', ') // upcoming vaccine due dates within 1 month
+            ],
+            source: "new-landing-page form",
+            media: {},
+            buttons: [],
+            carouselCards: [],
+            location: {}
+        };
+
+        // Send the data to the first API
+        fetch('https://backend.aisensy.com/campaign/t1/api/v2', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data1)
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('First API Success:', data);
+            // Proceed to generate PDF after successful API call
+            downloadPDF(babyName, dob, parentContact, vaccineSchedule);
+        })
+        .catch((error) => {
+            console.error('Error with first API:', error);
+        });
+
+        // Second API call without waiting for the response of the first API
+        const data2 = {
+            name: babyName,
+            dob: dob,
+            number: parentContact
+        };
+
+        // Send the data to the second API
+        fetch(`https://uat.soulocal.in/web/enquiries?name=${data2.name}&dob=${data2.dob}&number=${data2.number}`, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Second API Success:', data);
+        })
+        .catch((error) => {
+            console.error('Error with second API:', error);
+        });
+    }
+function downloadPDF(babyName, dob, parentContact, vaccineSchedule) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    // Set up the document content
+    doc.setFontSize(14);
+    doc.setTextColor(0, 0, 0); // Black color for text
+
+    // Generate table data
+    const tableData = vaccineSchedule.map(vaccine => [
+        vaccine.vaccine,
+        vaccine.dueDate
+    ]);
+
+    // Generate the table in the PDF
+    doc.autoTable({
+        head: [['Vaccine', 'Due Date']],
+        body: tableData,
+        startY: 90, // Adjust the startY position as needed
+        margin: { left: doc.internal.pageSize.width / 3 + 10 },
+        headStyles: {
+            fillColor: [0, 0, 255],
+            textColor: '#fff',
+            lineColor: '#4CAF50',
+        },
+        styles: {
+            lineColor: '#ddd',
+            lineWidth: 0.5,
+        },
+        didDrawPage: function (data) {
+            const pageHeight = doc.internal.pageSize.height;
+            const lineHeight = 10;
+            const pageWidth = doc.internal.pageSize.width;
+
+            // Left grey background
+            doc.setFillColor(241, 241, 241);
+            doc.rect(0, 0, pageWidth / 3, pageHeight, 'F');
+
+            // Green footer
+            doc.setFillColor(38, 188, 159);
+            doc.rect(0, pageHeight - lineHeight, pageWidth / 3, lineHeight, 'F');
+
+            // Blue footer
+            doc.setFillColor(28, 47, 127);
+            doc.rect(pageWidth / 3, pageHeight - lineHeight, pageWidth - pageWidth / 3, lineHeight, 'F');
+
+            // Top left logo
+            const logoImage = new Image();
+            logoImage.src = 'https://ik.imagekit.io/zawdck7lf/ippo/Brand_Images/WhatsApp%20Image%202024-07-01%20at%2012.43.25_174df248_4k8Ai3BzY.jpg?updatedAt=1719820348768';
+            doc.addImage(logoImage, 'JPG', 10, 10, 30, 15);
+
+            // Footer image
+            const footerImage = new Image();
+            footerImage.src = 'https://ik.imagekit.io/zawdck7lf/ippo/Brand_Images/1hat_-_Vaccine_footer-removebg-preview_80Kj2c3D9.png?updatedAt=1719820279104';
+            doc.addImage(footerImage, 'PNG', 12, pageHeight - 40, 60, 25);
+
+            // Insert form field values into the PDF after drawing the background
+            doc.setFontSize(14);
+            doc.setTextColor(0, 0, 255); // Blue color for field names
+            doc.text("Child's Name:", 15, 35);
+            doc.setTextColor(0, 0, 0); // Black color for field data
+            doc.text(babyName, 15, 42);
+
+            doc.setTextColor(0, 0, 255); // Blue color for field names
+            doc.text("Date of Birth:", 15, 50);
+            doc.setTextColor(0, 0, 0); // Black color for field data
+            doc.text(dob, 15, 57);
+
+            doc.setTextColor(0, 0, 255); // Blue color for field names
+            doc.text("Mobile Number:", 15, 65);
+            doc.setTextColor(0, 0, 0); // Black color for field data
+            doc.text(parentContact, 15, 72);
+        }
+    });
+
+    // Save the PDF
+    doc.save('baby_vaccine_scheduler.pdf');
+}
+</script>
+
+</body>
+</html>
